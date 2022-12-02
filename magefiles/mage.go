@@ -3,45 +3,12 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/magefile/mage/mg"
+
+	"github.com/magefile/mage/sh"
 	"os"
 )
-
-func getLatestGitTag() {
-	var r, err = git.PlainOpen(".")
-	if err != nil {
-		fmt.Printf("Error Opening Repo %v", err)
-	}
-	iter, err := r.Tags()
-	if err != nil {
-		// Handle error
-		fmt.Printf("Error Retreiving Tags %v", err)
-	}
-
-	if err := iter.ForEach(func(ref *plumbing.Reference) (string, error) {
-		obj, err := r.TagObject(ref.Hash())
-		switch err {
-		case nil:
-			// Tag object present
-			return "", errors.New("Tag not present")
-		case plumbing.ErrObjectNotFound:
-			// Not a tag object
-			return "", errors.New("Not a tag object")
-		default:
-			// Some other error
-			return "", err
-		}
-
-		return obj.Name, nil
-	}); err != nil {
-		// Handle outer iterator error
-		fmt.Printf("error reteirving tag details %v\n", err)
-	}
-
-}
 
 func getTag() (string, error) {
 	dat, err := os.ReadFile("TAG")
@@ -57,7 +24,9 @@ func ReleaseNotes() {
 
 }
 
-func NginxTag() {
+type Tag mg.Namespace
+
+func (Tag) Nginx() {
 	tag, err := getTag()
 	if err != nil {
 		fmt.Printf("Error %v", err)
@@ -65,6 +34,30 @@ func NginxTag() {
 	fmt.Printf("%v", tag)
 }
 
-func GitTag() {
-	getLatestGitTag()
+func bump(tag string) {
+	dat, err := os.ReadFile("TAG")
+	if err != nil {
+		fmt.Printf("Error %v", err)
+	}
+	fmt.Printf("Updating Tag %v to %v\n", string(dat), tag)
+	os.WriteFile("TAG", []byte(tag), 0666)
+	if err != nil {
+		fmt.Printf("Error %v", err)
+	}
+}
+
+func (Tag) Bump(tag string) {
+	bump(tag)
+}
+func (Tag) Git() {
+	getGitTag()
+}
+
+func getGitTag() {
+	git := sh.OutCmd("git")
+	tag, err := git("describe", "--tags", "--abbrev=0")
+	if err != nil {
+		fmt.Printf("Error %v", err)
+	}
+	fmt.Printf("%s", tag)
 }
