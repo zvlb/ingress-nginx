@@ -3,8 +3,10 @@ module github.com/kubernetes/ingress-nginx/magefiles
 go 1.19
 
 require (
+	github.com/blang/semver/v4 v4.0.0
 	github.com/helm/helm v2.17.0+incompatible
 	github.com/magefile/mage v1.14.0
+	golang.org/x/mod v0.7.0
 )
 
 require (

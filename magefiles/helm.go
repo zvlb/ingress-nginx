@@ -7,46 +7,44 @@ import (
 	"github.com/helm/helm/pkg/chartutil"
 	"github.com/magefile/mage/mg"
 	"os"
-	"strings"
 )
 
 const HelmChartPath = "charts/ingress-nginx/Chart.yaml"
 const HelmChartValues = "charts/ingress-nginx/values.yaml"
 
-type Yaml mg.Namespace
+type Helm mg.Namespace
 
-func (Yaml) Read(file string) {
+func (Helm) Read(file string) {
 
 }
 
-func (Yaml) UpdateHelm() {
-	updateHelmChart()
+func (Helm) UpdateAppVersion() {
+	updateAppVersion()
 }
 
-func updateHelmChart() {
+func updateAppVersion() {
+
+}
+
+func (Helm) UpdateVersion(ver string) {
+	updateVersion(ver)
+}
+
+func updateVersion(ver string) {
 	fmt.Printf("Reading File %v\n", HelmChartPath)
 
-	//Read in the helm chart
-	chartFile, err := os.ReadFile(HelmChartPath)
-	if err != nil {
-		fmt.Printf("Error Reading Yaml file:%v", err)
-	}
-
-	//marshal chart
-	chart, err := chartutil.UnmarshalChartfile(chartFile)
+	chart, err := chartutil.LoadChartfile(HelmChartPath)
 	if err != nil {
 		fmt.Errorf("Error Unmarshalling Chart: %v", err)
 	}
 
-	//Get the new tag
+	//Get the current tag
 	tagV, err := getTag()
 	if err != nil {
 		fmt.Errorf("ERROR reading tag: %v", err)
 		os.Exit(1)
 	}
 
-	//remove newline
-	tagV = strings.Replace(tagV, "\n", "", -1)
 	//remove the v from TAG
 	tag := tagV[1:]
 
