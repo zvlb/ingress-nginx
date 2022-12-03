@@ -11,7 +11,15 @@ import (
 	"strings"
 )
 
-func getNginxVer() (string, error) {
+type Tag mg.Namespace
+
+func (Tag) Nginx() {
+	tag, err := getIngressNGINXVersion()
+	CheckIfError(err, "")
+	fmt.Printf("%v", tag)
+}
+
+func getIngressNGINXVersion() (string, error) {
 	dat, err := os.ReadFile("TAG")
 	if err != nil {
 		return "", err
@@ -20,19 +28,6 @@ func getNginxVer() (string, error) {
 	//remove newline
 	datString = strings.Replace(datString, "\n", "", -1)
 	return datString, nil
-}
-
-// Generate Release Notes
-func ReleaseNotes() {
-
-}
-
-type Tag mg.Namespace
-
-func (Tag) Nginx() {
-	tag, err := getNginxVer()
-	CheckIfError(err, "")
-	fmt.Printf("%v", tag)
 }
 
 func checkSemVer(currentTag, newTag string) bool {
@@ -77,14 +72,13 @@ func bump(currentTag, newTag string) {
 	CheckIfError(err, "Error Writing New Tag File")
 }
 
-func (Tag) Bump(newTag string) {
-	currentTag, err := getNginxVer()
-	if err != nil {
-		fmt.Printf("Error %v", err)
-	}
+func (Tag) BumpNginx(newTag string) {
+	currentTag, err := getIngressNGINXVersion()
+	CheckIfError(err, "Getting Ingress-nginx Version")
 
 	bump(currentTag, newTag)
 }
+
 func (Tag) Git() {
 	getGitTag()
 }
