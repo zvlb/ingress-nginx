@@ -11,15 +11,15 @@ import (
 	"strings"
 )
 
-func getTag() (string, error) {
-	var tag string
+func getNginxVer() (string, error) {
 	dat, err := os.ReadFile("TAG")
 	if err != nil {
 		return "", err
 	}
+	datString := string(dat)
 	//remove newline
-	tag = strings.Replace(string(dat), "\n", "", -1)
-	return tag, nil
+	datString = strings.Replace(datString, "\n", "", -1)
+	return datString, nil
 }
 
 // Generate Release Notes
@@ -30,28 +30,26 @@ func ReleaseNotes() {
 type Tag mg.Namespace
 
 func (Tag) Nginx() {
-	tag, err := getTag()
-	if err != nil {
-		fmt.Printf("Error %v", err)
-	}
+	tag, err := getNginxVer()
+	CheckIfError(err, "")
 	fmt.Printf("%v", tag)
 }
 
 func checkSemVer(currentTag, newTag string) bool {
 	cTag, err := semver.Make(currentTag[1:])
 	if err != nil {
-		fmt.Printf("%v Not a valid Semver\n", newTag)
+		ErrorF("Error Current Tag %v Making Semver : %v", currentTag[1:], err)
 		return false
 	}
 	nTag, err := semver.Make(newTag[1:])
 	if err != nil {
-		fmt.Printf("%v Not a valid Semver\n", newTag)
+		ErrorF("%v Error Making Semver %v \n", newTag, err)
 		return false
 	}
 
 	err = nTag.Validate()
 	if err != nil {
-		fmt.Printf("%v Not a valid Semver\n", newTag)
+		ErrorF("%v not a valid Semver %v \n", newTag, err)
 		return false
 	}
 
@@ -61,7 +59,7 @@ func checkSemVer(currentTag, newTag string) bool {
 	//+1 if newTag > currentTag.
 	comp := nTag.Compare(cTag)
 	if comp <= 0 {
-		fmt.Printf("SemVer:%v is not an update\n", newTag)
+		Warning("SemVer:%v is not an update\n", newTag)
 		return false
 	}
 	return true
@@ -70,25 +68,22 @@ func checkSemVer(currentTag, newTag string) bool {
 func bump(currentTag, newTag string) {
 	//check if semver is valid
 	if !checkSemVer(currentTag, newTag) {
-		fmt.Printf("ERROR: Semver is not valid %v\n", newTag)
+		ErrorF("ERROR: Semver is not valid %v \n", newTag)
 		os.Exit(1)
 	}
 
-	fmt.Printf("Updating Tag %v to %v\n", currentTag, newTag)
+	Debug("Updating Tag %v to %v \n", currentTag, newTag)
 	err := os.WriteFile("TAG", []byte(newTag), 0666)
-	if err != nil {
-		fmt.Printf("Error %v", err)
-		os.Exit(1)
-	}
+	CheckIfError(err, "Error Writing New Tag File")
 }
 
 func (Tag) Bump(newTag string) {
-	currentTag, err := os.ReadFile("TAG")
+	currentTag, err := getNginxVer()
 	if err != nil {
 		fmt.Printf("Error %v", err)
 	}
 
-	bump(string(currentTag), newTag)
+	bump(currentTag, newTag)
 }
 func (Tag) Git() {
 	getGitTag()
@@ -97,8 +92,6 @@ func (Tag) Git() {
 func getGitTag() {
 	git := sh.OutCmd("git")
 	tag, err := git("describe", "--tags", "--abbrev=0")
-	if err != nil {
-		fmt.Printf("Error %v", err)
-	}
-	fmt.Printf("%s", tag)
+	CheckIfError(err, "Reading Git data")
+	Debug("Git Tag: %s", tag)
 }

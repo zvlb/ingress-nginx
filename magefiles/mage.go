@@ -8,4 +8,7 @@ import (
 	"os"
 )
 
-func main() { os.Exit(mage.Main()) }
+func main() {
+
+	os.Exit(mage.Main())
+}

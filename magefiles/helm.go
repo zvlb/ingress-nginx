@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/helm/helm/pkg/chartutil"
 	"github.com/magefile/mage/mg"
+
+	semver "github.com/blang/semver/v4"
 	"os"
 )
 
@@ -26,37 +28,43 @@ func updateAppVersion() {
 
 }
 
-func (Helm) UpdateVersion(ver string) {
-	updateVersion(ver)
+func (Helm) UpdateVersion() {
+	updateVersion()
 }
 
-func updateVersion(ver string) {
+func updateVersion() {
 	fmt.Printf("Reading File %v\n", HelmChartPath)
 
 	chart, err := chartutil.LoadChartfile(HelmChartPath)
-	if err != nil {
-		fmt.Errorf("Error Unmarshalling Chart: %v", err)
-	}
+	CheckIfError(err, "Error Loading Chart")
 
 	//Get the current tag
-	tagV, err := getTag()
-	if err != nil {
-		fmt.Errorf("ERROR reading tag: %v", err)
-		os.Exit(1)
-	}
+	appVersionV, err := getNginxVer()
+	CheckIfError(err, "Get Nginx Version")
 
 	//remove the v from TAG
-	tag := tagV[1:]
+	appVersion := appVersionV[1:]
 
-	fmt.Printf("TAG: %s Chart AppVersion: %s\n", tag, chart.AppVersion)
-	//compare chart versions
-	if tag == chart.AppVersion {
-		fmt.Printf("EXITING TAG: %v Match Chart Verison: %v \n", tag, chart.AppVersion)
-		os.Exit(1)
+	fmt.Printf("Ignress Nginx App Version: %s Chart AppVersion: %s\n", appVersion, chart.AppVersion)
+	if appVersion == chart.AppVersion {
+		Warning("Ingress NGINX Version didnt change")
+		return
 	}
 
 	//Update the helm chart
-	chart.AppVersion = tag
+	chart.AppVersion = appVersion
+	cTag, err := semver.Make(chart.Version)
+	if err != nil {
+		fmt.Printf("ERROR Creating Chart Version: %v", err)
+		os.Exit(1)
+	}
+
+	if err = cTag.IncrementPatch(); err != nil {
+		Info("ERROR Incrementing Chart Version: %v", err)
+		os.Exit(1)
+	}
+	chart.Version = cTag.String()
+	fmt.Printf("DEBUG: Updated Chart Version: %v", chart.Version)
 
 	if err := chartutil.SaveChartfile(HelmChartPath, chart); err != nil {
 		fmt.Printf("ERROR Saving new Chart: %v", err)
