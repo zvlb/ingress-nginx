@@ -6,7 +6,18 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
+
+var DEBUG bool
+
+func init() {
+	DEBUG = false
+	debugENV := os.Getenv("MAGE_DEBUG")
+	if debugENV == "true" {
+		DEBUG = true
+	}
+}
 
 // CheckArgs should be used to ensure the right command line arguments are
 // passed before executing an example.
@@ -18,21 +29,33 @@ func CheckArgs(arg ...string) {
 }
 
 // CheckIfError should be used to naively panics if an error is not nil.
-func CheckIfError(err error) {
+func CheckIfError(err error, format string, args ...interface{}) {
 	if err == nil {
 		return
 	}
 
-	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
+	fmt.Printf("\x1b[31;1m%s ERROR %s %s\x1b[0m\n", time.RFC3339, fmt.Sprintf(format, args...), err)
 	os.Exit(1)
 }
 
 // Info should be used to describe the example commands that are about to run.
 func Info(format string, args ...interface{}) {
-	fmt.Printf("\x1b[34;1m%s\x1b[0m\n", fmt.Sprintf(format, args...))
+	fmt.Printf("\x1b[34;1m%s INFO: %s\x1b[0m\n", time.RFC3339, fmt.Sprintf(format, args...))
 }
 
 // Warning should be used to display a warning
 func Warning(format string, args ...interface{}) {
-	fmt.Printf("\x1b[36;1m%s\x1b[0m\n", fmt.Sprintf(format, args...))
+	fmt.Printf("\x1b[36;1m%s WARNING: %s\x1b[0m\n", time.RFC3339, fmt.Sprintf(format, args...))
+}
+
+// Info should be used to describe the example commands that are about to run.
+func Debug(format string, args ...interface{}) {
+	if DEBUG {
+		fmt.Printf("\x1b[34;1m%s DEBUG: %s\x1b[0m\n", time.RFC3339, fmt.Sprintf(format, args...))
+	}
+}
+
+// Info should be used to describe the example commands that are about to run.
+func ErrorF(format string, args ...interface{}) {
+	fmt.Printf("\x1b[34;1m%s ERROR: %s\x1b[0m\n", time.RFC3339, fmt.Sprintf(format, args...))
 }
