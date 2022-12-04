@@ -15,10 +15,7 @@ const HelmChartValues = "charts/ingress-nginx/values.yaml"
 
 type Helm mg.Namespace
 
-func (Helm) Read(file string) {
-
-}
-
+// UpdateAppVersion Updates the Helm App Version of Ingress Nginx Controller
 func (Helm) UpdateAppVersion() {
 	updateAppVersion()
 }
@@ -27,6 +24,7 @@ func updateAppVersion() {
 
 }
 
+// UpdateVersion Update Helm Version of the Chart
 func (Helm) UpdateVersion() {
 	updateVersion()
 }
@@ -35,11 +33,11 @@ func updateVersion() {
 	Info("Reading File %v\n", HelmChartPath)
 
 	chart, err := chartutil.LoadChartfile(HelmChartPath)
-	CheckIfError(err, "Error Loading Chart")
+	CheckIfError(err, "Could not Load Chart")
 
 	//Get the current tag
 	appVersionV, err := getIngressNGINXVersion()
-	CheckIfError(err, "Get Nginx Version")
+	CheckIfError(err, "Issue Retrieving the Ingress Nginx Version")
 
 	//remove the v from TAG
 	appVersion := appVersionV[1:]
@@ -53,7 +51,7 @@ func updateVersion() {
 	//Update the helm chart
 	chart.AppVersion = appVersion
 	cTag, err := semver.Make(chart.Version)
-	CheckIfError(err, "ERROR Creating Chart Version: %v", err)
+	CheckIfError(err, "Creating Chart Version: %v", err)
 
 	if err = cTag.IncrementPatch(); err != nil {
 		ErrorF("Incrementing Chart Version: %v", err)

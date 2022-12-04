@@ -8,8 +8,10 @@ import (
 
 type Release mg.Namespace
 
+// Release Create a new release of ingress nginx controller
 func (Release) Release(version string) {
 	//update git controller tag TODO
+	mg.Deps(mg.F(Tag.ControllerTag, version))
 	//update ingress-nginx version
 	mg.Deps(mg.F(Tag.BumpNginx, version))
 	//update helm chart app version
