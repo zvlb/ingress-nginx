@@ -9,6 +9,5 @@ import (
 )
 
 func main() {
-
 	os.Exit(mage.Main())
 }

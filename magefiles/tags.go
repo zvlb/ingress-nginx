@@ -13,6 +13,7 @@ import (
 
 type Tag mg.Namespace
 
+// Nginx returns the ingress-nginx current version
 func (Tag) Nginx() {
 	tag, err := getIngressNGINXVersion()
 	CheckIfError(err, "")
@@ -30,31 +31,31 @@ func getIngressNGINXVersion() (string, error) {
 	return datString, nil
 }
 
-func checkSemVer(currentTag, newTag string) bool {
-	cTag, err := semver.Make(currentTag[1:])
+func checkSemVer(currentVersion, newVersion string) bool {
+	cVersion, err := semver.Make(currentVersion[1:])
 	if err != nil {
-		ErrorF("Error Current Tag %v Making Semver : %v", currentTag[1:], err)
+		ErrorF("Error Current Tag %v Making Semver : %v", currentVersion[1:], err)
 		return false
 	}
-	nTag, err := semver.Make(newTag[1:])
+	nVersion, err := semver.Make(newVersion[1:])
 	if err != nil {
-		ErrorF("%v Error Making Semver %v \n", newTag, err)
+		ErrorF("%v Error Making Semver %v \n", newVersion, err)
 		return false
 	}
 
-	err = nTag.Validate()
+	err = nVersion.Validate()
 	if err != nil {
-		ErrorF("%v not a valid Semver %v \n", newTag, err)
+		ErrorF("%v not a valid Semver %v \n", newVersion, err)
 		return false
 	}
 
 	//The result will be
-	//0 if newTag == currentTag
-	//-1 if newTag< currentTag
-	//+1 if newTag > currentTag.
-	comp := nTag.Compare(cTag)
+	//0 if newVersion == currentVersion
+	//-1 if newVersion < currentVersion
+	//+1 if newVersion > currentVersion.
+	comp := nVersion.Compare(cVersion)
 	if comp <= 0 {
-		Warning("SemVer:%v is not an update\n", newTag)
+		Warning("SemVer:%v is not an update\n", newVersion)
 		return false
 	}
 	return true
@@ -72,6 +73,7 @@ func bump(currentTag, newTag string) {
 	CheckIfError(err, "Error Writing New Tag File")
 }
 
+// BumpNginx will update the nginx TAG
 func (Tag) BumpNginx(newTag string) {
 	currentTag, err := getIngressNGINXVersion()
 	CheckIfError(err, "Getting Ingress-nginx Version")
@@ -79,13 +81,22 @@ func (Tag) BumpNginx(newTag string) {
 	bump(currentTag, newTag)
 }
 
+// Git Returns the latest git tag
 func (Tag) Git() {
-	getGitTag()
+	tag, err := getGitTag()
+	CheckIfError(err, "Retrieving Git Tag")
+	Info("Git tag: %v", tag)
 }
 
-func getGitTag() {
+func getGitTag() (string, error) {
 	git := sh.OutCmd("git")
-	tag, err := git("describe", "--tags", "--abbrev=0")
-	CheckIfError(err, "Reading Git data")
-	Debug("Git Tag: %s", tag)
+	return git("describe", "--tags", "--abbrev=0")
+}
+
+// ControllerTag Creates a new Git Tag for the ingress controller
+func (Tag) ControllerTag(version string) {
+	git := sh.OutCmd("git")
+	tag, err := git("tag", "-a", fmt.Sprintf("controller-%s", version), fmt.Sprintf("-m \"Automated Controller release %v", version))
+	CheckIfError(err, "Creating git tag")
+	Debug("Git :qTag: %s", tag)
 }
