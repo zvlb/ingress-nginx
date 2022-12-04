@@ -1,0 +1,11 @@
+---
+bin:
+  gh:
+    url: 'https://github.com/cli/cli/releases/download/{{.VERSION}}/gh_{{.VERSION}}_{{.OS}}_{{.ARCH}}.tar.gz'
+    version: "v2.20.12"
+    os: "linux"
+    arch: "amd64"
+    sha:
+      linux-amd64: "3bc7cd3b2fd9082218b8246595673f55badb351db1b9e627eec121beb8b26450"
+    zipPaths:
+    - "bin/gh"

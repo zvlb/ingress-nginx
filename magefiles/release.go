@@ -8,6 +8,12 @@ import (
 
 type Release mg.Namespace
 
+func (Release) GithubReleaseNotes() {
+	status, err := gh("status")
+	CheckIfError(err, "Checkout github status")
+	Info("Github Status %s", status)
+}
+
 // Release Create a new release of ingress nginx controller
 func (Release) Release(version string) {
 	//update git controller tag TODO
