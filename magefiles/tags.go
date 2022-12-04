@@ -13,6 +13,8 @@ import (
 
 type Tag mg.Namespace
 
+var git = sh.OutCmd("git")
+
 // Nginx returns the ingress-nginx current version
 func (Tag) Nginx() {
 	tag, err := getIngressNGINXVersion()
@@ -89,14 +91,35 @@ func (Tag) Git() {
 }
 
 func getGitTag() (string, error) {
-	git := sh.OutCmd("git")
 	return git("describe", "--tags", "--abbrev=0")
 }
 
 // ControllerTag Creates a new Git Tag for the ingress controller
 func (Tag) ControllerTag(version string) {
-	git := sh.OutCmd("git")
 	tag, err := git("tag", "-a", fmt.Sprintf("controller-%s", version), fmt.Sprintf("-m \"Automated Controller release %v", version))
 	CheckIfError(err, "Creating git tag")
 	Debug("Git :qTag: %s", tag)
+}
+
+func (Tag) AllControllerTags() {
+	tags := getAllControllerTags()
+	for i, s := range tags {
+		Info("#%v Version %v", i, s)
+	}
+}
+
+func getAllControllerTags() []string {
+	allControllerTags, err := git("tag", "-l", "--sort=-v:refname", "controller-v*")
+	CheckIfError(err, "Retrieving git tags")
+	if !sh.CmdRan(err) {
+		Warning("Issue Running Command")
+	}
+	if allControllerTags == "" {
+		Warning("All Controller Tags is empty")
+	}
+	Debug("Controller Tags: %v", allControllerTags)
+
+	temp := strings.Split(allControllerTags, "\n")
+	Debug("There are %v controller tags", len(temp))
+	return temp
 }
