@@ -27,3 +27,12 @@ func commitsBetweenTags() {
 		Info("#%v Version %v", i, s)
 	}
 }
+
+// Generate Release Notes
+func (Release) ReleaseNotes() {
+	makeReleaseNotes()
+}
+
+func makeReleaseNotes() {
+
+}

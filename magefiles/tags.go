@@ -14,7 +14,6 @@ import (
 type Tag mg.Namespace
 
 var git = sh.OutCmd("git")
-var gh = sh.OutCmd("gh")
 
 // Nginx returns the ingress-nginx current version
 func (Tag) Nginx() {
@@ -76,6 +75,7 @@ func bump(currentTag, newTag string) {
 
 // BumpNginx will update the nginx TAG
 func (Tag) BumpNginx(newTag string) {
+	Info("Update Ingress Nginx Controller version %v", newTag)
 	currentTag, err := getIngressNGINXVersion()
 	CheckIfError(err, "Getting Ingress-nginx Version")
 	bump(currentTag, newTag)
@@ -94,6 +94,7 @@ func getGitTag() (string, error) {
 
 // ControllerTag Creates a new Git Tag for the ingress controller
 func (Tag) ControllerTag(version string) {
+	Info("Create Ingress Nginx Controller Tag %v", version)
 	tag, err := git("tag", "-a", fmt.Sprintf("controller-%s", version), fmt.Sprintf("-m \"Automated Controller release %v", version))
 	CheckIfError(err, "Creating git tag")
 	Debug("Git :qTag: %s", tag)
