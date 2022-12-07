@@ -3,7 +3,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	gogithub "github.com/google/go-github/v28/github"
+	"golang.org/x/oauth2"
 	"strings"
 )
 
@@ -33,6 +36,29 @@ func (Release) ReleaseNotes() {
 	makeReleaseNotes()
 }
 
-func makeReleaseNotes() {
+type GitHubClient struct {
+	client            *gogithub.Client
+	owner, repository string
+}
 
+func (Release) GithubReleaseNotes() {
+	gh, err := githubClient()
+	CheckIfError(err, "Get Latest Release Client error")
+	release, _, err := gh.client.Repositories.GetLatestRelease(context.Background(), gh.owner, gh.repository)
+	CheckIfError(err, "Get Latest Release")
+	Info("Latest Release %v", release.String())
+}
+
+func githubClient() (*GitHubClient, error) {
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: GITHUB_TOKEN},
+	)
+	oauthClient := oauth2.NewClient(context.Background(), ts)
+	return &GitHubClient{
+		client:     gogithub.NewClient(oauthClient),
+		owner:      ORG,
+		repository: REPO,
+	}, nil
+}
+func makeReleaseNotes() {
 }

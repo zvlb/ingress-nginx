@@ -3,7 +3,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+
 	"github.com/magefile/mage/mg"
 	gh_release "github.com/mysteriumnetwork/go-ci/github"
 	"os"
@@ -11,16 +13,13 @@ import (
 
 type Release mg.Namespace
 
-var ORG = "strongjz"
-var REPO = "ingress-nginx"
-
-var GITHUB_TOKEN string
+var ORG = "strongjz"        // the owner so we can test from forks
+var REPO = "ingress-nginx"  // the repo to pull from
+var RELEASE_BRANCH = "main" //we only release from main
+var GITHUB_TOKEN string     // the google/gogithub lib needs an PAT to access the GitHub API
 
 func init() {
 	GITHUB_TOKEN = os.Getenv("GITHUB_TOKEN")
-}
-
-func (Release) GithubReleaseNotes() {
 
 }
 
@@ -52,9 +51,9 @@ func (Release) CreateRelease(name string) {
 
 // CurrentRelease retrieves the current Ingress Nginx Controller Release
 func (Release) CurrentRelease() {
-	releaser, err := gh_release.NewReleaser(ORG, REPO, GITHUB_TOKEN)
-	CheckIfError(err, "Github Release Client error")
-	latest, err := releaser.Latest()
-	CheckIfError(err, "Latest release error")
-	Info("Latest Release: %v", latest.TagName)
+	gh, err := githubClient()
+	CheckIfError(err, "Get Latest Release Client error")
+	release, _, err := gh.client.Repositories.GetLatestRelease(context.Background(), gh.owner, gh.repository)
+	CheckIfError(err, "Get Latest Release")
+	Info("Latest Release %v", release.String())
 }

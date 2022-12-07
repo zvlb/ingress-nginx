@@ -64,13 +64,3 @@ func Debug(format string, args ...interface{}) {
 func ErrorF(format string, args ...interface{}) {
 	fmt.Printf("\x1b[34;1m%s ERROR: %s\x1b[0m\n", timeStamp(), fmt.Sprintf(format, args...))
 }
-
-//// Deps installs dependency tools for the project
-//func Deps() {
-//	deps.GetAllDeps()
-//}
-
-//// Lint runs linting against the project.
-//func Lint() error {
-//	return common.Lint()
-//}
