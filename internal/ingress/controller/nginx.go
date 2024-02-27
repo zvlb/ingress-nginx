@@ -357,6 +357,8 @@ func (n *NGINXController) Start() {
 				break
 			}
 
+			fmt.Printf("\nPoint: NewNGINXController.Start Event: %v\n", event)
+
 			if evt, ok := event.(store.Event); ok {
 				klog.V(3).InfoS("Event received", "type", evt.Type, "object", evt.Obj)
 				if evt.Type == store.ConfigurationEvent {
