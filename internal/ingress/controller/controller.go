@@ -1001,6 +1001,17 @@ func (n *NGINXController) createUpstreams(data []*ingress.Ingress, du *ingress.B
 	upstreams := make(map[string]*ingress.Backend)
 	upstreams[defUpstreamName] = du
 
+	foundFlag := false
+	for _, ing := range data {
+		if ing.Name == "example-ingress" {
+			foundFlag = true
+			fmt.Printf("Point: NGINXController.createUpstreams. Found Ingress!!!\n")
+		}
+	}
+	if !foundFlag {
+		fmt.Printf("Point: NGINXController.createUpstreams. Not found Ingress!!!\n")
+	}
+
 	for _, ing := range data {
 		if ing.Name == "example-ingress" {
 			fmt.Printf("Point: NGINXController.createUpstreams. Found Ingress!!!\n")
@@ -1063,7 +1074,9 @@ func (n *NGINXController) createUpstreams(data []*ingress.Ingress, du *ingress.B
 		}
 
 		for _, rule := range ing.Spec.Rules {
-			fmt.Printf("Point: NGINXController.createUpstreams. Start analize rule!!\n")
+			if ing.Name == "example-ingress" {
+				fmt.Printf("Point: NGINXController.createUpstreams. Start analize rule!!\n")
+			}
 			if rule.HTTP == nil {
 				continue
 			}
@@ -1078,7 +1091,9 @@ func (n *NGINXController) createUpstreams(data []*ingress.Ingress, du *ingress.B
 				name := upstreamName(ing.Namespace, path.Backend.Service)
 				svcName, svcPort := upstreamServiceNameAndPort(path.Backend.Service)
 				if _, ok := upstreams[name]; ok {
-					fmt.Printf("Point: NGINXController.createUpstreams. Upstream Alredy exist! Key: %v, Value: %v\n", name, upstreams[name])
+					if ing.Name == "example-ingress" {
+						fmt.Printf("Point: NGINXController.createUpstreams. Upstream Alredy exist! Key: %v, Value: %v\n", name, upstreams[name])
+					}
 					continue
 				}
 
@@ -1091,11 +1106,15 @@ func (n *NGINXController) createUpstreams(data []*ingress.Ingress, du *ingress.B
 				upstreams[name].UpstreamHashBy.UpstreamHashBySubsetSize = anns.UpstreamHashBy.UpstreamHashBySubsetSize
 
 				upstreams[name].LoadBalancing = anns.LoadBalancing
-				fmt.Printf("Point: NGINXController.createUpstreams. LoadBalancing BEFORE: %v\n", upstreams[name].LoadBalancing)
+				if ing.Name == "example-ingress" {
+					fmt.Printf("Point: NGINXController.createUpstreams. LoadBalancing BEFORE: %v\n", upstreams[name].LoadBalancing)
+				}
 				if upstreams[name].LoadBalancing == "" {
 					upstreams[name].LoadBalancing = n.store.GetBackendConfiguration().LoadBalancing
 				}
-				fmt.Printf("Point: NGINXController.createUpstreams. LoadBalancing AFTER: %v\n", upstreams[name].LoadBalancing)
+				if ing.Name == "example-ingress" {
+					fmt.Printf("Point: NGINXController.createUpstreams. LoadBalancing AFTER: %v\n", upstreams[name].LoadBalancing)
+				}
 
 				svcKey := fmt.Sprintf("%v/%v", ing.Namespace, svcName)
 
