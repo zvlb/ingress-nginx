@@ -1100,8 +1100,8 @@ func sortIngressSlice(ingresses []*ingress.Ingress) {
 
 // ListIngresses returns the list of Ingresses
 func (s *k8sStore) ListIngresses() []*ingress.Ingress {
-	fmt.Printf("Len Ingresses: %v\n\n\n", len(s.listers.Ingress.List()))
-	fmt.Printf("Len IngressWithAnnotation: %v\n\n\n", len(s.listers.IngressWithAnnotation.List()))
+	fmt.Printf("Point: k8sStore.ListIngresses. Len Ingresses: %v\n\n\n", len(s.listers.Ingress.List()))
+	fmt.Printf("Point: k8sStore.ListIngresses. Len IngressWithAnnotation: %v\n\n\n", len(s.listers.IngressWithAnnotation.List()))
 
 	// filter ingress rules
 	ingresses := make([]*ingress.Ingress, 0)
@@ -1112,7 +1112,7 @@ func (s *k8sStore) ListIngresses() []*ingress.Ingress {
 		}
 
 		if ing.Name == "example-ingress" {
-			fmt.Printf("\n\n\n\nFOUND INGRESS!!!!!!!: %v\n\n\n", ing)
+			fmt.Printf("Point: k8sStore.ListIngresses. FOUND INGRESS!!!!!!!: %v\n\n\n", ing)
 		}
 
 		ingresses = append(ingresses, ing)

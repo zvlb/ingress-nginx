@@ -174,6 +174,11 @@ func (n *NGINXController) syncIngress(interface{}) error {
 	}
 
 	ings := n.store.ListIngresses()
+	for _, ing := range ings {
+		if ing.Name == "example-ingress" {
+			fmt.Printf("Point: NGINXController.syncIngress\n. Ingress found!!!")
+		}
+	}
 	hosts, servers, pcfg := n.getConfiguration(ings)
 
 	n.metricCollector.SetSSLExpireTime(servers)
@@ -702,8 +707,10 @@ func dropSnippetDirectives(anns *annotations.Ingress, ingKey string) {
 //nolint:gocyclo // Ignore function complexity error
 func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*ingress.Backend, []*ingress.Server) {
 	du := n.getDefaultUpstream()
+	upsreamServersTime := time.Now()
 	upstreams := n.createUpstreams(ingresses, du)
 	servers := n.createServers(ingresses, upstreams, du)
+	fmt.Printf("Point: NGINXController.getBackendServers\n. Time to create upstreams and servers: %v", time.Since(upsreamServersTime))
 
 	var canaryIngresses []*ingress.Ingress
 
@@ -995,6 +1002,9 @@ func (n *NGINXController) createUpstreams(data []*ingress.Ingress, du *ingress.B
 	upstreams[defUpstreamName] = du
 
 	for _, ing := range data {
+		if ing.Name == "example-ingress" {
+			fmt.Printf("Point: NGINXController.createUpstreams. Found Ingress!!!\n")
+		}
 		ingKey := k8s.MetaNamespaceKey(ing)
 		anns := ing.ParsedAnnotations
 
@@ -1053,6 +1063,7 @@ func (n *NGINXController) createUpstreams(data []*ingress.Ingress, du *ingress.B
 		}
 
 		for _, rule := range ing.Spec.Rules {
+			fmt.Printf("Point: NGINXController.createUpstreams. Start analize rule!!\n")
 			if rule.HTTP == nil {
 				continue
 			}
@@ -1067,6 +1078,7 @@ func (n *NGINXController) createUpstreams(data []*ingress.Ingress, du *ingress.B
 				name := upstreamName(ing.Namespace, path.Backend.Service)
 				svcName, svcPort := upstreamServiceNameAndPort(path.Backend.Service)
 				if _, ok := upstreams[name]; ok {
+					fmt.Printf("Point: NGINXController.createUpstreams. Upstream Alredy exist! Key: %v, Value: %v\n", name, upstreams[name])
 					continue
 				}
 
@@ -1079,9 +1091,11 @@ func (n *NGINXController) createUpstreams(data []*ingress.Ingress, du *ingress.B
 				upstreams[name].UpstreamHashBy.UpstreamHashBySubsetSize = anns.UpstreamHashBy.UpstreamHashBySubsetSize
 
 				upstreams[name].LoadBalancing = anns.LoadBalancing
+				fmt.Printf("Point: NGINXController.createUpstreams. LoadBalancing BEFORE: %v\n", upstreams[name].LoadBalancing)
 				if upstreams[name].LoadBalancing == "" {
 					upstreams[name].LoadBalancing = n.store.GetBackendConfiguration().LoadBalancing
 				}
+				fmt.Printf("Point: NGINXController.createUpstreams. LoadBalancing AFTER: %v\n", upstreams[name].LoadBalancing)
 
 				svcKey := fmt.Sprintf("%v/%v", ing.Namespace, svcName)
 
