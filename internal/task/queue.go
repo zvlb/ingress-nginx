@@ -184,7 +184,7 @@ func NewCustomTaskQueue(syncFn func(interface{}) error, fn func(interface{}) (in
 
 	go func(*Queue) {
 		for {
-			fmt.Printf("Point: queue.NewCustomTaskQueue. QUEUE Len: %v", q.queue.Len())
+			fmt.Printf("\nPoint: queue.NewCustomTaskQueue. QUEUE Len: %v\n", q.queue.Len())
 			time.Sleep(5 * time.Second)
 		}
 	}(q)

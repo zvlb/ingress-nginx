@@ -264,6 +264,13 @@ type NGINXController struct {
 func (n *NGINXController) Start() {
 	klog.InfoS("Starting NGINX Ingress controller")
 
+	go func() {
+		for {
+			fmt.Printf("\nPoint: NewNGINXController. QUEUE Len: %v\n", n.updateCh.Len())
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
 	n.store.Run(n.stopCh)
 
 	// we need to use the defined ingress class to allow multiple leaders
