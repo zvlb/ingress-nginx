@@ -182,6 +182,13 @@ func NewCustomTaskQueue(syncFn func(interface{}) error, fn func(interface{}) (in
 		q.fn = q.defaultKeyFunc
 	}
 
+	go func(*Queue) {
+		for {
+			fmt.Printf("Point: queue.NewCustomTaskQueue. QUEUE Len: %v", q.queue.Len())
+			time.Sleep(5 * time.Second)
+		}
+	}(q)
+
 	return q
 }
 

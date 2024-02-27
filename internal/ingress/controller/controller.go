@@ -710,7 +710,7 @@ func (n *NGINXController) getBackendServers(ingresses []*ingress.Ingress) ([]*in
 	upsreamServersTime := time.Now()
 	upstreams := n.createUpstreams(ingresses, du)
 	servers := n.createServers(ingresses, upstreams, du)
-	fmt.Printf("Point: NGINXController.getBackendServers\n. Time to create upstreams and servers: %v", time.Since(upsreamServersTime))
+	fmt.Printf("Point: NGINXController.getBackendServers. Time to create upstreams and servers: %v\n", time.Since(upsreamServersTime))
 
 	var canaryIngresses []*ingress.Ingress
 
