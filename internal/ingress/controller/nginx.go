@@ -367,7 +367,9 @@ func (n *NGINXController) Start() {
 					continue
 				}
 
+				timeStartSync := time.Now()
 				n.syncQueue.EnqueueSkippableTask(evt.Obj)
+				fmt.Printf("\nPoint: NewNGINXController.Sync EventType: %v. Time to sync: %v\n", evt.Type, time.Since(timeStartSync))
 			} else {
 				klog.Warningf("Unexpected event type received %T", event)
 			}
