@@ -167,6 +167,11 @@ func (n *NGINXController) GetPublishService() *apiv1.Service {
 // configuration file and passes the resulting data structures to the backend
 // (OnUpdate) when a reload is deemed necessary.
 func (n *NGINXController) syncIngress(interface{}) error {
+	timeStartSync := time.Now()
+	defer func() {
+		fmt.Printf("\nPoint: NGINXController.syncIngress. Time to sync: %v\n", time.Since(timeStartSync))
+	}()
+
 	n.syncRateLimiter.Accept()
 
 	if n.syncQueue.IsShuttingDown() {
