@@ -642,6 +642,12 @@ func (n *NGINXController) generateTemplate(cfg ngx_config.Configuration, ingress
 // testTemplate checks if the NGINX configuration inside the byte array is valid
 // running the command "nginx -t" using a temporal file.
 func (n *NGINXController) testTemplate(cfg []byte) error {
+	timeStart := time.Now()
+	defer func() {
+		fmt.Printf("\nPoint: NGINX.testTemplate. Time to test: %v\n", time.Since(timeStart))
+	}()
+
+	t1 := time.Now()
 	if len(cfg) == 0 {
 		return fmt.Errorf("invalid NGINX configuration (empty)")
 	}
@@ -655,6 +661,10 @@ func (n *NGINXController) testTemplate(cfg []byte) error {
 	if err != nil {
 		return err
 	}
+
+	fmt.Printf("\nPoint: NGINX.testTemplate. Time to test 1: %v\n", time.Since(t1))
+
+	t2 := time.Now()
 	out, err := n.command.Test(tmpfile.Name())
 	if err != nil {
 		// this error is different from the rest because it must be clear why nginx is not working
@@ -668,7 +678,13 @@ Error: %v
 		return errors.New(oe)
 	}
 
+	fmt.Printf("\nPoint: NGINX.testTemplate. Time to test 2: %v\n", time.Since(t2))
+
+	t3 := time.Now()
+
 	os.Remove(tmpfile.Name())
+
+	fmt.Printf("\nPoint: NGINX.testTemplate. Time to test 3: %v\n", time.Since(t3))
 	return nil
 }
 

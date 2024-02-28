@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	api "k8s.io/api/core/v1"
 	networking "k8s.io/api/networking/v1"
@@ -141,6 +142,11 @@ func (nc NginxCommand) ExecCommand(args ...string) *exec.Cmd {
 
 // Test checks if config file is a syntax valid nginx configuration
 func (nc NginxCommand) Test(cfg string) ([]byte, error) {
+	timeStart := time.Now()
+	defer func() {
+		fmt.Printf("\nPoint: controller.util.Test. Time to test: %v\n", time.Since(timeStart))
+	}()
+
 	//nolint:gosec // Ignore G204 error
 	return exec.Command(nc.Binary, "-c", cfg, "-t").CombinedOutput()
 }
