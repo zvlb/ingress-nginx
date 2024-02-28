@@ -172,20 +172,30 @@ func (n *NGINXController) syncIngress(interface{}) error {
 		fmt.Printf("\nPoint: NGINXController.syncIngress. Time to sync: %v\n", time.Since(timeStartSync))
 	}()
 
+	t1 := time.Now()
+
 	n.syncRateLimiter.Accept()
 
 	if n.syncQueue.IsShuttingDown() {
 		return nil
 	}
 
+	fmt.Printf("\nPoint: NGINXController.syncIngress. Time to sync 1: %v\n", time.Since(t1))
+
+	t2 := time.Now()
 	ings := n.store.ListIngresses()
 	for _, ing := range ings {
 		if ing.Name == "example-ingress" {
-			fmt.Printf("Point: NGINXController.syncIngress\n. Ingress found!!!")
+			fmt.Printf("Point: NGINXController.syncIngress. Ingress found!!!")
 		}
 	}
-	hosts, servers, pcfg := n.getConfiguration(ings)
+	fmt.Printf("\nPoint: NGINXController.syncIngress. Time to sync 2: %v\n", time.Since(t2))
 
+	t3 := time.Now()
+	hosts, servers, pcfg := n.getConfiguration(ings)
+	fmt.Printf("\nPoint: NGINXController.syncIngress. Time to sync 3: %v\n", time.Since(t3))
+
+	t4 := time.Now()
 	n.metricCollector.SetSSLExpireTime(servers)
 	n.metricCollector.SetSSLInfo(servers)
 
@@ -195,6 +205,10 @@ func (n *NGINXController) syncIngress(interface{}) error {
 	}
 
 	n.metricCollector.SetHosts(hosts)
+
+	fmt.Printf("\nPoint: NGINXController.syncIngress. Time to sync 4: %v\n", time.Since(t4))
+
+	t5 := time.Now()
 
 	if !utilingress.IsDynamicConfigurationEnough(pcfg, n.runningConfig) {
 		klog.InfoS("Configuration changes detected, backend reload required")
@@ -224,6 +238,10 @@ func (n *NGINXController) syncIngress(interface{}) error {
 		n.recorder.Eventf(k8s.IngressPodDetails, apiv1.EventTypeNormal, "RELOAD", "NGINX reload triggered due to a change in configuration")
 	}
 
+	fmt.Printf("\nPoint: NGINXController.syncIngress. Time to sync 5: %v\n", time.Since(t5))
+
+	t6 := time.Now()
+
 	isFirstSync := n.runningConfig.Equal(&ingress.Configuration{})
 	if isFirstSync {
 		// For the initial sync it always takes some time for NGINX to start listening
@@ -238,6 +256,10 @@ func (n *NGINXController) syncIngress(interface{}) error {
 		Factor:   1.3,
 		Jitter:   0.1,
 	}
+
+	fmt.Printf("\nPoint: NGINXController.syncIngress. Time to sync 6: %v\n", time.Since(t6))
+
+	t7 := time.Now()
 
 	retriesRemaining := retry.Steps
 	err := wait.ExponentialBackoff(retry, func() (bool, error) {
@@ -266,6 +288,7 @@ func (n *NGINXController) syncIngress(interface{}) error {
 
 	n.runningConfig = pcfg
 
+	fmt.Printf("\nPoint: NGINXController.syncIngress. Time to sync 7: %v\n", time.Since(t7))
 	return nil
 }
 
