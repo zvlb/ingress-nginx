@@ -126,6 +126,7 @@ func (t *Queue) worker() {
 			continue
 		}
 
+		timeStartSync := time.Now()
 		klog.V(3).InfoS("syncing", "key", item.Key)
 		if err := t.sync(key); err != nil {
 			klog.ErrorS(err, "requeuing", "key", item.Key)
@@ -137,6 +138,7 @@ func (t *Queue) worker() {
 			t.queue.Forget(key)
 			t.lastSync = ts
 		}
+		fmt.Printf("\nPoint: queue.worker. Time to sync: %v\n", time.Since(timeStartSync))
 
 		t.queue.Done(key)
 	}
