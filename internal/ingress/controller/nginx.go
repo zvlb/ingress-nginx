@@ -679,23 +679,45 @@ Error: %v
 //
 //nolint:gocritic // the cfg shouldn't be changed, and shouldn't be mutated by other processes while being rendered.
 func (n *NGINXController) OnUpdate(ingressCfg ingress.Configuration) error {
+	timeStart := time.Now()
+	defer func() {
+		fmt.Printf("\nPoint: NGINX.OnUpdate. Time to update: %v\n", time.Since(timeStart))
+	}()
+
+	t1 := time.Now()
 	cfg := n.store.GetBackendConfiguration()
 	cfg.Resolver = n.resolver
+
+	fmt.Printf("\nPoint: NGINX.OnUpdate. Time to update 1: %v\n", time.Since(t1))
+
+	t2 := time.Now()
 
 	content, err := n.generateTemplate(cfg, ingressCfg)
 	if err != nil {
 		return err
 	}
 
+	fmt.Printf("\nPoint: NGINX.OnUpdate. Time to update 2: %v\n", time.Since(t2))
+
+	t3 := time.Now()
+
 	err = createOpentelemetryCfg(&cfg)
 	if err != nil {
 		return err
 	}
 
+	fmt.Printf("\nPoint: NGINX.OnUpdate. Time to update 3: %v\n", time.Since(t3))
+
+	t4 := time.Now()
+
 	err = n.testTemplate(content)
 	if err != nil {
 		return err
 	}
+
+	fmt.Printf("\nPoint: NGINX.OnUpdate. Time to update 4: %v\n", time.Since(t4))
+
+	t5 := time.Now()
 
 	if klog.V(2).Enabled() {
 		src, err := os.ReadFile(cfgPath)
@@ -734,15 +756,25 @@ func (n *NGINXController) OnUpdate(ingressCfg ingress.Configuration) error {
 		}
 	}
 
+	fmt.Printf("\nPoint: NGINX.OnUpdate. Time to update 5: %v\n", time.Since(t5))
+
+	t6 := time.Now()
+
 	err = os.WriteFile(cfgPath, content, file.ReadWriteByUser)
 	if err != nil {
 		return err
 	}
 
+	fmt.Printf("\nPoint: NGINX.OnUpdate. Time to update 6: %v\n", time.Since(t6))
+
+	t7 := time.Now()
+
 	o, err := n.command.ExecCommand("-s", "reload").CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("%v\n%v", err, string(o))
 	}
+
+	fmt.Printf("\nPoint: NGINX.OnUpdate. Time to update 7: %v\n", time.Since(t7))
 
 	return nil
 }
