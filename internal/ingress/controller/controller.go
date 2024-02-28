@@ -197,6 +197,34 @@ func (n *NGINXController) syncIngress(interface{}) error {
 
 	n.metricCollector.SetHosts(hosts)
 
+	if !utilingress.IsDynamicConfigurationEnough(pcfg, n.runningConfig) {
+		klog.InfoS("Configuration changes detected, backend reload required")
+
+		hash, err := hashstructure.Hash(pcfg, hashstructure.FormatV1, &hashstructure.HashOptions{
+			TagName: "json",
+		})
+		if err != nil {
+			klog.Errorf("unexpected error hashing configuration: %v", err)
+		}
+
+		pcfg.ConfigurationChecksum = fmt.Sprintf("%v", hash)
+
+		err = n.OnUpdate(*pcfg)
+		if err != nil {
+			n.metricCollector.IncReloadErrorCount()
+			n.metricCollector.ConfigSuccess(hash, false)
+			klog.Errorf("Unexpected failure reloading the backend:\n%v", err)
+			n.recorder.Eventf(k8s.IngressPodDetails, apiv1.EventTypeWarning, "RELOAD", fmt.Sprintf("Error reloading NGINX: %v", err))
+			return err
+		}
+
+		klog.InfoS("Backend successfully reloaded")
+		n.metricCollector.ConfigSuccess(hash, true)
+		n.metricCollector.IncReloadCount()
+
+		n.recorder.Eventf(k8s.IngressPodDetails, apiv1.EventTypeNormal, "RELOAD", "NGINX reload triggered due to a change in configuration")
+	}
+
 	isFirstSync := n.runningConfig.Equal(&ingress.Configuration{})
 	if isFirstSync {
 		// For the initial sync it always takes some time for NGINX to start listening
@@ -232,40 +260,58 @@ func (n *NGINXController) syncIngress(interface{}) error {
 		return err
 	}
 
-	if !utilingress.IsDynamicConfigurationEnough(pcfg, n.runningConfig) {
-		klog.InfoS("Configuration changes detected, backend reload required")
-
-		hash, err := hashstructure.Hash(pcfg, hashstructure.FormatV1, &hashstructure.HashOptions{
-			TagName: "json",
-		})
-		if err != nil {
-			klog.Errorf("unexpected error hashing configuration: %v", err)
-		}
-
-		pcfg.ConfigurationChecksum = fmt.Sprintf("%v", hash)
-
-		err = n.OnUpdate(*pcfg)
-		if err != nil {
-			n.metricCollector.IncReloadErrorCount()
-			n.metricCollector.ConfigSuccess(hash, false)
-			klog.Errorf("Unexpected failure reloading the backend:\n%v", err)
-			n.recorder.Eventf(k8s.IngressPodDetails, apiv1.EventTypeWarning, "RELOAD", fmt.Sprintf("Error reloading NGINX: %v", err))
-			return err
-		}
-
-		klog.InfoS("Backend successfully reloaded")
-		n.metricCollector.ConfigSuccess(hash, true)
-		n.metricCollector.IncReloadCount()
-
-		n.recorder.Eventf(k8s.IngressPodDetails, apiv1.EventTypeNormal, "RELOAD", "NGINX reload triggered due to a change in configuration")
-	}
-
 	ri := utilingress.GetRemovedIngresses(n.runningConfig, pcfg)
 	re := utilingress.GetRemovedHosts(n.runningConfig, pcfg)
 	rc := utilingress.GetRemovedCertificateSerialNumbers(n.runningConfig, pcfg)
 	n.metricCollector.RemoveMetrics(ri, re, rc)
 
 	n.runningConfig = pcfg
+
+	return nil
+}
+
+func (n *NGINXController) syncEndpoints(interface{}) error {
+	n.syncRateLimiter.Accept()
+
+	if n.syncEPQueue.IsShuttingDown() {
+		return nil
+	}
+
+	ings := n.store.ListIngresses()
+
+	_, _, pcfg := n.getConfiguration(ings)
+
+	if n.runningConfig.Equal(pcfg) {
+		klog.V(3).Infof("No configuration change detected, skipping backend reload")
+		return nil
+	}
+
+	retry := wait.Backoff{
+		Steps:    1 + n.cfg.DynamicConfigurationRetries,
+		Duration: time.Second,
+		Factor:   1.3,
+		Jitter:   0.1,
+	}
+
+	retriesRemaining := retry.Steps
+	err := wait.ExponentialBackoff(retry, func() (bool, error) {
+		err := n.configureDynamically(pcfg)
+		if err == nil {
+			klog.V(2).Infof("Dynamic reconfiguration succeeded.")
+			return true, nil
+		}
+		retriesRemaining--
+		if retriesRemaining > 0 {
+			klog.Warningf("Dynamic reconfiguration failed (retrying; %d retries left): %v", retriesRemaining, err)
+			return false, nil
+		}
+		klog.Warningf("Dynamic reconfiguration failed: %v", err)
+		return false, err
+	})
+	if err != nil {
+		klog.Errorf("Unexpected failure reconfiguring NGINX:\n%v", err)
+		return err
+	}
 
 	return nil
 }

@@ -141,6 +141,7 @@ func NewNGINXController(config *Configuration, mc metric.Collector) *NGINXContro
 		config.DisableSyncEvents)
 
 	n.syncQueue = task.NewTaskQueue(n.syncIngress)
+	n.syncEPQueue = task.NewTaskQueue(n.syncEndpoints)
 
 	if config.UpdateStatus {
 		n.syncStatus = status.NewStatusSyncer(status.Config{
@@ -222,6 +223,8 @@ type NGINXController struct {
 	recorder record.EventRecorder
 
 	syncQueue *task.Queue
+
+	syncEPQueue *task.Queue
 
 	syncStatus status.Syncer
 
@@ -316,6 +319,7 @@ func (n *NGINXController) Start() {
 	n.start(cmd)
 
 	go n.syncQueue.Run(time.Second, n.stopCh)
+	go n.syncEPQueue.Run(time.Second, n.stopCh)
 	// force initial sync
 	n.syncQueue.EnqueueTask(task.GetDummyObject("initial-sync"))
 
@@ -364,6 +368,11 @@ func (n *NGINXController) Start() {
 				if evt.Type == store.ConfigurationEvent {
 					// TODO: is this necessary? Consider removing this special case
 					n.syncQueue.EnqueueTask(task.GetDummyObject("configmap-change"))
+					continue
+				}
+
+				if evt.Type == store.EndpointEvent {
+					n.syncEPQueue.EnqueueTask(evt.Obj)
 					continue
 				}
 
