@@ -213,15 +213,22 @@ func (n *NGINXController) syncIngress(interface{}) error {
 	if !utilingress.IsDynamicConfigurationEnough(pcfg, n.runningConfig) {
 		klog.InfoS("Configuration changes detected, backend reload required")
 
+		t51 := time.Now()
 		hash, err := hashstructure.Hash(pcfg, hashstructure.FormatV1, &hashstructure.HashOptions{
 			TagName: "json",
 		})
 		if err != nil {
 			klog.Errorf("unexpected error hashing configuration: %v", err)
 		}
+		fmt.Printf("\nPoint: NGINXController.syncIngress. Time to sync 5.1: %v\n", time.Since(t51))
+
+		t52 := time.Now()
 
 		pcfg.ConfigurationChecksum = fmt.Sprintf("%v", hash)
 
+		fmt.Printf("\nPoint: NGINXController.syncIngress. Time to sync 5.2: %v\n", time.Since(t52))
+
+		t53 := time.Now()
 		err = n.OnUpdate(*pcfg)
 		if err != nil {
 			n.metricCollector.IncReloadErrorCount()
@@ -230,12 +237,19 @@ func (n *NGINXController) syncIngress(interface{}) error {
 			n.recorder.Eventf(k8s.IngressPodDetails, apiv1.EventTypeWarning, "RELOAD", fmt.Sprintf("Error reloading NGINX: %v", err))
 			return err
 		}
+		fmt.Printf("\nPoint: NGINXController.syncIngress. Time to sync 5.3: %v\n", time.Since(t53))
+
+		t54 := time.Now()
 
 		klog.InfoS("Backend successfully reloaded")
 		n.metricCollector.ConfigSuccess(hash, true)
 		n.metricCollector.IncReloadCount()
 
+		fmt.Printf("\nPoint: NGINXController.syncIngress. Time to sync 5.4: %v\n", time.Since(t54))
+
+		t55 := time.Now()
 		n.recorder.Eventf(k8s.IngressPodDetails, apiv1.EventTypeNormal, "RELOAD", "NGINX reload triggered due to a change in configuration")
+		fmt.Printf("\nPoint: NGINXController.syncIngress. Time to sync 5.5: %v\n", time.Since(t55))
 	}
 
 	fmt.Printf("\nPoint: NGINXController.syncIngress. Time to sync 5: %v\n", time.Since(t5))
