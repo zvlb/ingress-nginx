@@ -260,7 +260,7 @@ func (n *NGINXController) syncIngress(interface{}) error {
 }
 
 // syncEndpoints collects and update only Dynamic configs
-// Triggered for Endpoints changes
+// Triggered if Endpoints changed
 func (n *NGINXController) syncEndpoints(interface{}) error {
 	n.syncRateLimiter.Accept()
 
