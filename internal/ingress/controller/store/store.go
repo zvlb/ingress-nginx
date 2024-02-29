@@ -381,6 +381,7 @@ func New(
 	}
 
 	ingDeleteHandler := func(obj interface{}) {
+		fmt.Printf("\nPoint: store. ingEventHandler.DeleteFunc\n")
 		ing, ok := toIngress(obj)
 		if !ok {
 			// If we reached here it means the ingress was deleted but its final state is unrecorded.
@@ -427,6 +428,7 @@ func New(
 
 	ingEventHandler := cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
+			fmt.Printf("\nPoint: store. ingEventHandler.AddFunc\n")
 			ing, _ := toIngress(obj)
 
 			if !watchedNamespace(ing.Namespace) {
@@ -465,6 +467,7 @@ func New(
 		},
 		DeleteFunc: ingDeleteHandler,
 		UpdateFunc: func(old, cur interface{}) {
+			fmt.Printf("\nPoint: store. ingEventHandler.UpdateFunc\n")
 			oldIng, _ := toIngress(old)
 			curIng, _ := toIngress(cur)
 
@@ -524,6 +527,7 @@ func New(
 
 	ingressClassEventHandler := cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
+			fmt.Printf("\nPoint: store. ingressClassEventHandler.AddFunc\n")
 			ingressclass, ok := obj.(*networkingv1.IngressClass)
 			if !ok {
 				klog.Errorf("unexpected type: %T", obj)
@@ -549,6 +553,7 @@ func New(
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
+			fmt.Printf("\nPoint: store. ingressClassEventHandler.DeleteFunc\n")
 			ingressclass, ok := obj.(*networkingv1.IngressClass)
 			if !ok {
 				klog.Errorf("unexpected type: %T", obj)
@@ -568,6 +573,7 @@ func New(
 			}
 		},
 		UpdateFunc: func(old, cur interface{}) {
+			fmt.Printf("\nPoint: store. ingressClassEventHandler.UpdateFunc\n")
 			oic, ok := old.(*networkingv1.IngressClass)
 			if !ok {
 				klog.Errorf("unexpected type: %T", old)
@@ -598,6 +604,7 @@ func New(
 
 	secrEventHandler := cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
+			fmt.Printf("\nPoint: store. secrEventHandler.AddFunc\n")
 			sec, ok := obj.(*corev1.Secret)
 			if !ok {
 				klog.Errorf("unexpected type: %T", obj)
@@ -627,6 +634,7 @@ func New(
 			}
 		},
 		UpdateFunc: func(old, cur interface{}) {
+			fmt.Printf("\nPoint: store. secrEventHandler.UpdateFunc\n")
 			if !reflect.DeepEqual(old, cur) {
 				sec, ok := cur.(*corev1.Secret)
 				if !ok {
@@ -662,6 +670,7 @@ func New(
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
+			fmt.Printf("\nPoint: store. secrEventHandler.DeleteFunc\n")
 			sec, ok := obj.(*corev1.Secret)
 			if !ok {
 				// If we reached here it means the secret was deleted but its final state is unrecorded.
@@ -706,18 +715,21 @@ func New(
 
 	epsEventHandler := cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
+			fmt.Printf("\nPoint: store. epsEventHandler.AddFunc\n")
 			updateCh.In() <- Event{
 				Type: EndpointEvent,
 				Obj:  obj,
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
+			fmt.Printf("\nPoint: store. epsEventHandler.DeleteFunc\n")
 			updateCh.In() <- Event{
 				Type: EndpointEvent,
 				Obj:  obj,
 			}
 		},
 		UpdateFunc: func(old, cur interface{}) {
+			fmt.Printf("\nPoint: store. epsEventHandler.UpdateFunc\n")
 			oeps, ok := old.(*discoveryv1.EndpointSlice)
 			if !ok {
 				klog.Errorf("unexpected type: %T", old)
@@ -779,6 +791,7 @@ func New(
 
 	cmEventHandler := cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
+			fmt.Printf("\nPoint: store. cmEventHandler.AddFunc\n")
 			cfgMap, ok := obj.(*corev1.ConfigMap)
 			if !ok {
 				klog.Errorf("unexpected type: %T", obj)
@@ -787,6 +800,7 @@ func New(
 			handleCfgMapEvent(key, cfgMap, "CREATE")
 		},
 		UpdateFunc: func(old, cur interface{}) {
+			fmt.Printf("\nPoint: store. cmEventHandler.UpdateFunc\n")
 			if reflect.DeepEqual(old, cur) {
 				return
 			}
@@ -802,6 +816,7 @@ func New(
 
 	serviceHandler := cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
+			fmt.Printf("\nPoint: store. serviceHandler.AddFunc\n")
 			svc, ok := obj.(*corev1.Service)
 			if !ok {
 				klog.Errorf("unexpected type: %T", obj)
@@ -814,6 +829,7 @@ func New(
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
+			fmt.Printf("\nPoint: store. serviceHandler.DeleteFunc\n")
 			svc, ok := obj.(*corev1.Service)
 			if !ok {
 				klog.Errorf("unexpected type: %T", obj)
@@ -826,6 +842,7 @@ func New(
 			}
 		},
 		UpdateFunc: func(old, cur interface{}) {
+			fmt.Printf("\nPoint: store. serviceHandler.UpdateFunc\n")
 			oldSvc, ok := old.(*corev1.Service)
 			if !ok {
 				klog.Errorf("unexpected type: %T", old)
